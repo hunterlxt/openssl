@@ -35,6 +35,13 @@
 extern "C" {
 #endif
 
+/** get info to enable KTLS, mode determine write or read 
+ *  mode: 0 --> write  |  1 --> read
+ */
+unsigned char *SSL_get_ktls_key(const SSL *s, int mode);
+unsigned char *SSL_get_ktls_iv(const SSL *s, int mode);
+unsigned char *SSL_get_ktls_sequence(const SSL *s, int mode);
+
 /* OpenSSL version number for ASN.1 encoding of the session information */
 /*-
  * Version 0 - initial version

@@ -71,6 +71,10 @@
 extern "C" {
 #endif
 
+/* Use for KTLS, not to be exported */
+unsigned char *EVP_get_ktls_key(EVP_CIPHER_CTX *ctx);
+unsigned char *EVP_get_ktls_iv(EVP_CIPHER_CTX *ctx);
+
 int EVP_set_default_properties(OPENSSL_CTX *libctx, const char *propq);
 
 # define EVP_PKEY_MO_SIGN        0x0001

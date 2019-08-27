@@ -4732,3 +4732,5 @@ EVP_MAC_get_params                      4841	3_0_0	EXIST::FUNCTION:
 EVP_MAC_gettable_params                 4842	3_0_0	EXIST::FUNCTION:
 EVP_MAC_provider                        4843	3_0_0	EXIST::FUNCTION:
 EVP_MAC_do_all_ex                       4844	3_0_0	EXIST::FUNCTION:
+EVP_get_ktls_key                        4845	3_0_0	EXIST::FUNCTION:
+EVP_get_ktls_iv                         4846	3_0_0	EXIST::FUNCTION:

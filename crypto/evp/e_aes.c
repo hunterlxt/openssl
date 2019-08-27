@@ -4131,3 +4131,16 @@ BLOCK_CIPHER_custom(NID_aes, 128, 1, 0, siv, SIV, SIV_FLAGS)
 BLOCK_CIPHER_custom(NID_aes, 192, 1, 0, siv, SIV, SIV_FLAGS)
 BLOCK_CIPHER_custom(NID_aes, 256, 1, 0, siv, SIV, SIV_FLAGS)
 #endif
+
+
+unsigned char *EVP_get_ktls_key(EVP_CIPHER_CTX *ctx)
+{
+    EVP_AES_GCM_CTX *gcm_ctx = (EVP_AES_GCM_CTX*)(ctx->cipher_data);
+    return gcm_ctx->gcm.key;
+}
+
+unsigned char *EVP_get_ktls_iv(EVP_CIPHER_CTX *ctx)
+{
+    EVP_AES_GCM_CTX *gcm_ctx = (EVP_AES_GCM_CTX*)(ctx->cipher_data);
+    return gcm_ctx->iv;
+}

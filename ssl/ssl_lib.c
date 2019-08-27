@@ -21,10 +21,53 @@
 #include <openssl/engine.h>
 #include <openssl/async.h>
 #include <openssl/ct.h>
+#include <openssl/evp.h>
 #include <openssl/trace.h>
 #include "internal/cryptlib.h"
 #include "internal/refcount.h"
 #include "internal/ktls.h"
+
+unsigned char *SSL_get_ktls_key(const SSL *s, int mode) 
+{
+    unsigned char* ret = NULL;
+    if (mode == 0) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_write_ctx; 
+        ret = EVP_get_ktls_key(ctx);
+    } 
+    else if (mode == 1) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_read_ctx; 
+        ret = EVP_get_ktls_key(ctx);
+    }
+    return ret;
+}
+
+unsigned char *SSL_get_ktls_iv(const SSL *s, int mode) 
+{
+    unsigned char* ret = NULL;
+    if (mode == 0) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_write_ctx; 
+        ret = EVP_get_ktls_iv(ctx);
+    } 
+    else if (mode == 1) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_read_ctx; 
+        ret = EVP_get_ktls_iv(ctx);
+    }
+    return ret;
+}
+
+unsigned char *SSL_get_ktls_sequence(const SSL *s, int mode) 
+{
+    unsigned char* ret = NULL;
+    if (mode == 0)
+        ret = s->rlayer.write_sequence;
+    else if (mode == 1)
+        ret = s->rlayer.read_sequence;
+    return ret;
+}
 
 static int ssl_undefined_function_1(SSL *ssl, SSL3_RECORD *r, size_t s, int t)
 {
