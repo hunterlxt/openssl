@@ -122,6 +122,81 @@ static int count_unprocessed_records(SSL *s)
 }
 #endif
 
+int tls1_enable_ktls(SSL *s, int which)
+{
+    unsigned char *p, *mac_secret;
+    unsigned char *ms, *key, *iv;
+    EVP_CIPHER_CTX *dd;
+    const EVP_CIPHER *c;
+
+    size_t *mac_secret_size;
+    size_t n, i, j, k, cl;
+    
+#ifndef OPENSSL_NO_KTLS
+    struct tls12_crypto_info_aes_gcm_128 crypto_info;
+    BIO *bio;
+    unsigned char geniv[12];
+    int count_unprocessed;
+    int bit;
+#endif
+
+    if (which & SSL3_CC_READ) {
+        dd = s->enc_read_ctx;
+        mac_secret = &(s->s3.read_mac_secret[0]);
+        mac_secret_size = &(s->s3.read_mac_secret_size);
+    } else {
+        dd = s->enc_write_ctx;
+        mac_secret = &(s->s3.write_mac_secret[0]);
+        mac_secret_size = &(s->s3.write_mac_secret_size);
+    }
+
+    c = s->s3.tmp.new_sym_enc;
+    p = s->s3.tmp.key_block;
+    i = *mac_secret_size = s->s3.tmp.new_mac_secret_size;
+
+    if (EVP_CIPHER_mode(c) == EVP_CIPH_GCM_MODE)
+        k = EVP_GCM_TLS_FIXED_IV_LEN;
+    else if (EVP_CIPHER_mode(c) == EVP_CIPH_CCM_MODE)
+        k = EVP_CCM_TLS_FIXED_IV_LEN;
+    else
+        k = EVP_CIPHER_iv_length(c);
+    if ((which == SSL3_CHANGE_CIPHER_CLIENT_WRITE) ||
+        (which == SSL3_CHANGE_CIPHER_SERVER_READ)) {
+        ms = &(p[0]);
+        n = i + i;
+        key = &(p[n]);
+        n += j + j;
+        iv = &(p[n]);
+        n += k + k;
+    } else {
+        n = i;
+        ms = &(p[n]);
+        n += i + j;
+        key = &(p[n]);
+        n += j + k;
+        iv = &(p[n]);
+        n += k;
+    }
+
+    if (n > s->s3.tmp.key_block_length) {
+        SSLfatal(s, SSL_AD_INTERNAL_ERROR, SSL_F_TLS1_CHANGE_CIPHER_STATE,
+                 ERR_R_INTERNAL_ERROR);
+        exit(-1);
+    }
+
+    EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_GET_IV,
+                        EVP_GCM_TLS_FIXED_IV_LEN + EVP_GCM_TLS_EXPLICIT_IV_LEN,
+                        geniv);
+    memcpy(crypto_info.iv, geniv + EVP_GCM_TLS_FIXED_IV_LEN,
+           TLS_CIPHER_AES_GCM_128_IV_SIZE);
+    memcpy(crypto_info.salt, geniv, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
+    memcpy(crypto_info.key, key, EVP_CIPHER_key_length(c));
+    if (which & SSL3_CC_READ)
+        memcpy(crypto_info.rec_seq, s->rlayer.read_sequence, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
+    else
+        memcpy(crypto_info.rec_seq, s->rlayer.write_sequence, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
+}
+
 int tls1_change_cipher_state(SSL *s, int which)
 {
     unsigned char *p, *mac_secret;

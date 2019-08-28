@@ -2469,6 +2469,7 @@ __owur int dtls1_dispatch_alert(SSL *s);
 __owur int ssl_init_wbio_buffer(SSL *s);
 int ssl_free_wbio_buffer(SSL *s);
 
+__owur int tls1_enable_ktls(SSL *s, int mode);
 __owur int tls1_change_cipher_state(SSL *s, int which);
 __owur int tls1_setup_key_block(SSL *s);
 __owur size_t tls1_final_finish_mac(SSL *s, const char *str, size_t slen,
