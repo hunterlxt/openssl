@@ -123,7 +123,7 @@ static int count_unprocessed_records(SSL *s)
 }
 #endif
 
-int tls1_enable_ktls(SSL *s, int which)
+struct crypto_info *tls1_enable_ktls(SSL *s, int which)
 {
     unsigned char *p, *mac_secret;
     unsigned char *ms, *key, *iv;
@@ -198,6 +198,8 @@ int tls1_enable_ktls(SSL *s, int which)
         memcpy(crypto_info.rec_seq, s->rlayer.read_sequence, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
     else
         memcpy(crypto_info.rec_seq, s->rlayer.write_sequence, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
+
+    return &crypto_info;
 }
 
 int tls1_change_cipher_state(SSL *s, int which)
