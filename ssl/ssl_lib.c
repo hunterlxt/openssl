@@ -26,6 +26,10 @@
 #include "internal/refcount.h"
 #include "internal/ktls.h"
 
+int SSL_enable_ktls(const SSL *s, int which) {
+    return tls1_enable_ktls(s, which);
+}
+
 static int ssl_undefined_function_1(SSL *ssl, SSL3_RECORD *r, size_t s, int t)
 {
     (void)r;
