@@ -123,7 +123,7 @@ static int count_unprocessed_records(SSL *s)
 }
 #endif
 
-struct crypto_info *tls1_enable_ktls(SSL *s, int which)
+struct tls12_crypto_info_aes_gcm_128 *tls1_enable_ktls(SSL *s, int which)
 {
     unsigned char *p, *mac_secret;
     unsigned char *ms, *key, *iv;

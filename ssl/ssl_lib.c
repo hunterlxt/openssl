@@ -26,7 +26,7 @@
 #include "internal/refcount.h"
 #include "internal/ktls.h"
 
-struct crypto_info *SSL_enable_ktls(const SSL *s, int which) {
+struct tls12_crypto_info_aes_gcm_128 *SSL_enable_ktls(const SSL *s, int which) {
     return tls1_enable_ktls(s, which);
 }
 
