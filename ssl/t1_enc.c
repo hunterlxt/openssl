@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+#include <linux/tls.h>
 #include "ssl_locl.h"
 #include "record/record_locl.h"
 #include "internal/ktls.h"
