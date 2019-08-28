@@ -185,6 +185,8 @@ int tls1_enable_ktls(SSL *s, int which)
         exit(-1);
     }
 
+    crypto_info.info.cipher_type = TLS_CIPHER_AES_GCM_128;
+    crypto_info.info.version = s->version;
     EVP_CIPHER_CTX_ctrl(dd, EVP_CTRL_GET_IV,
                         EVP_GCM_TLS_FIXED_IV_LEN + EVP_GCM_TLS_EXPLICIT_IV_LEN,
                         geniv);
