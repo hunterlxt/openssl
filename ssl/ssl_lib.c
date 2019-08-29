@@ -28,9 +28,6 @@
 
 const char SSL_version_str[] = OPENSSL_VERSION_TEXT;
 
-#define TX_MODE 0
-#define RX_MODE 1
-
 unsigned char *SSL_get_ktls_key(const SSL *s, int mode) 
 {
     unsigned char* ret = NULL;
@@ -61,7 +58,7 @@ unsigned char *SSL_get_ktls_sequence(const SSL *s, int mode)
     return ret;
 }
 
-int SSL_enable_ktls(const SSL *ssl, int fd) {
+int SSL_enable_ktls(const SSL *ssl, int fd, int mode) {
     struct tls12_crypto_info_aes_gcm_128 tx, rx;
 
     tx.info.version = TLS_1_2_VERSION;
@@ -69,39 +66,46 @@ int SSL_enable_ktls(const SSL *ssl, int fd) {
     rx.info.version = TLS_1_2_VERSION;
     rx.info.cipher_type = TLS_CIPHER_AES_GCM_128;
 
-    unsigned char *writeKey = SSL_get_ktls_key(ssl, 0);
-    unsigned char *readKey = SSL_get_ktls_key(ssl, 1);
-    unsigned char *writeIV = SSL_get_ktls_iv(ssl, 0);
-    unsigned char *readIV = SSL_get_ktls_iv(ssl, 1);
-    unsigned char *writeSeq = SSL_get_ktls_sequence(ssl, 0);
-    unsigned char *readSeq = SSL_get_ktls_sequence(ssl, 1);
-
-    memcpy(tx.iv, writeIV + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
-    memcpy(tx.rec_seq, writeSeq, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
-    memcpy(tx.key, writeKey, TLS_CIPHER_AES_GCM_128_KEY_SIZE);
-    memcpy(tx.salt, writeIV, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
-
-    memcpy(rx.iv, readIV + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
-    memcpy(rx.rec_seq, readSeq, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
-    memcpy(rx.key, readKey, TLS_CIPHER_AES_GCM_128_KEY_SIZE);
-    memcpy(rx.salt, readIV, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
-
     int flag = 0;
     flag = setsockopt(fd, SOL_TCP, TCP_ULP, "tls", sizeof("tls"));
     if (flag != 0) {
         printf("OpenSSL: Enable tls error (%d)\n", flag);
         return 0;
     }
-    flag = setsockopt(fd, SOL_TLS, 1, &tx, sizeof(tx));
-    if (flag != 0) {
-        printf("OpenSSL: set tx error (%d)\n", flag);
-        return 0;
+
+    unsigned char *writeKey, *readKey, *writeIV;
+    unsigned char *readIV, *writeSeq, *readSeq;
+
+    if (mode == TX_MODE || mode == TX_RX_MODE) {
+        writeKey = SSL_get_ktls_key(ssl, 0);
+        writeIV = SSL_get_ktls_iv(ssl, 0);
+        writeSeq = SSL_get_ktls_sequence(ssl, 0);
+        memcpy(tx.iv, writeIV + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
+        memcpy(tx.rec_seq, writeSeq, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
+        memcpy(tx.key, writeKey, TLS_CIPHER_AES_GCM_128_KEY_SIZE);
+        memcpy(tx.salt, writeIV, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
+        flag = setsockopt(fd, SOL_TLS, 1, &tx, sizeof(tx));
+        if (flag != 0) {
+            printf("OpenSSL: set tx error (%d)\n", flag);
+            return 0;
+        }
     }
-    flag = setsockopt(fd, SOL_TLS, 2, &rx, sizeof(rx));
-    if (flag != 0) {
-        printf("OpenSSL: set rx error (%d)\n", flag);
-        return 0;
+    
+    if (mode == RX_MODE || mode == TX_RX_MODE) {
+        readKey = SSL_get_ktls_key(ssl, 1);
+        readIV = SSL_get_ktls_iv(ssl, 1);
+        readSeq = SSL_get_ktls_sequence(ssl, 1);
+        memcpy(rx.iv, readIV + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
+        memcpy(rx.rec_seq, readSeq, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
+        memcpy(rx.key, readKey, TLS_CIPHER_AES_GCM_128_KEY_SIZE);
+        memcpy(rx.salt, readIV, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
+        flag = setsockopt(fd, SOL_TLS, 2, &rx, sizeof(rx));
+        if (flag != 0) {
+            printf("OpenSSL: set rx error (%d)\n", flag);
+            return 0;
+        }
     }
+
     return 1;
 }
 
