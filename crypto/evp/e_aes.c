@@ -4135,12 +4135,20 @@ BLOCK_CIPHER_custom(NID_aes, 256, 1, 0, siv, SIV, SIV_FLAGS)
 
 unsigned char *EVP_get_ktls_key(EVP_CIPHER_CTX *ctx)
 {
-    EVP_AES_GCM_CTX *gcm_ctx = (EVP_AES_GCM_CTX*)(ctx->cipher_data);
+    EVP_AES_GCM_CTX *gcm_ctx = (EVP_AES_GCM_CTX*)(EVP_CIPHER_CTX_get_cipher_data(ctx));
+    if (gcm_ctx == NULL) {
+        printf("GCM CTX NULL\n");
+        exit(-1);
+    }
     return gcm_ctx->gcm.key;
 }
 
 unsigned char *EVP_get_ktls_iv(EVP_CIPHER_CTX *ctx)
 {
     EVP_AES_GCM_CTX *gcm_ctx = (EVP_AES_GCM_CTX*)(ctx->cipher_data);
+    if (gcm_ctx == NULL) {
+        printf("GCM CTX NULL\n");
+        exit(-1);
+    }
     return gcm_ctx->iv;
 }

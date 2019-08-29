@@ -38,9 +38,7 @@ extern "C" {
 /** get info to enable KTLS, mode determine write or read 
  *  mode: 0 --> write  |  1 --> read
  */
-unsigned char *SSL_get_ktls_key(const SSL *s, int mode);
-unsigned char *SSL_get_ktls_iv(const SSL *s, int mode);
-unsigned char *SSL_get_ktls_sequence(const SSL *s, int mode);
+int SSL_enable_ktls(const SSL *s, int fd);
 
 /* OpenSSL version number for ASN.1 encoding of the session information */
 /*-
