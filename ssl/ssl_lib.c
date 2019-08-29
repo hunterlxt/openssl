@@ -20,6 +20,7 @@
 #include <openssl/engine.h>
 #include <openssl/async.h>
 #include <openssl/ct.h>
+#include <openssl/evp.h>
 #include <linux/tls.h>
 #include <netinet/tcp.h>
 #include "internal/cryptlib.h"
@@ -33,41 +34,29 @@ const char SSL_version_str[] = OPENSSL_VERSION_TEXT;
 unsigned char *SSL_get_ktls_key(const SSL *s, int mode) 
 {
     unsigned char* ret = NULL;
-    if (mode == TX_MODE) 
-    {
-        EVP_CIPHER_CTX *ctx = s->enc_write_ctx; 
-        ret = EVP_get_ktls_key(ctx);
-    } 
-    else if (mode == RX_MODE) 
-    {
-        EVP_CIPHER_CTX *ctx = s->enc_read_ctx; 
-        ret = EVP_get_ktls_key(ctx);
-    }
+    if (mode == 0) 
+        ret = EVP_get_ktls_key(s->enc_write_ctx);
+    else if (mode == 1) 
+        ret = EVP_get_ktls_key(s->enc_read_ctx);
     return ret;
 }
 
 unsigned char *SSL_get_ktls_iv(const SSL *s, int mode) 
 {
     unsigned char* ret = NULL;
-    if (mode == TX_MODE) 
-    {
-        EVP_CIPHER_CTX *ctx = s->enc_write_ctx; 
-        ret = EVP_get_ktls_iv(ctx);
-    } 
-    else if (mode == RX_MODE) 
-    {
-        EVP_CIPHER_CTX *ctx = s->enc_read_ctx; 
-        ret = EVP_get_ktls_iv(ctx);
-    }
+    if (mode == 0) 
+        ret = EVP_get_ktls_iv(s->enc_write_ctx);
+    else if (mode == 1) 
+        ret = EVP_get_ktls_iv(s->enc_read_ctx);
     return ret;
 }
 
 unsigned char *SSL_get_ktls_sequence(const SSL *s, int mode) 
 {
     unsigned char* ret = NULL;
-    if (mode == TX_MODE)
+    if (mode == 0)
         ret = s->rlayer.write_sequence;
-    else if (mode == RX_MODE)
+    else if (mode == 1)
         ret = s->rlayer.read_sequence;
     return ret;
 }
@@ -80,12 +69,12 @@ int SSL_enable_ktls(const SSL *ssl, int fd) {
     rx.info.version = TLS_1_2_VERSION;
     rx.info.cipher_type = TLS_CIPHER_AES_GCM_128;
 
-    unsigned char *writeKey = SSL_get_ktls_key(ssl, TX_MODE);
-    unsigned char *readKey = SSL_get_ktls_key(ssl, RX_MODE);
-    unsigned char *writeIV = SSL_get_ktls_iv(ssl, TX_MODE);
-    unsigned char *readIV = SSL_get_ktls_iv(ssl, RX_MODE);
-    unsigned char *writeSeq = SSL_get_ktls_sequence(ssl, TX_MODE);
-    unsigned char *readSeq = SSL_get_ktls_sequence(ssl, RX_MODE);
+    unsigned char *writeKey = SSL_get_ktls_key(ssl, 0);
+    unsigned char *readKey = SSL_get_ktls_key(ssl, 1);
+    unsigned char *writeIV = SSL_get_ktls_iv(ssl, 0);
+    unsigned char *readIV = SSL_get_ktls_iv(ssl, 1);
+    unsigned char *writeSeq = SSL_get_ktls_sequence(ssl, 0);
+    unsigned char *readSeq = SSL_get_ktls_sequence(ssl, 1);
 
     memcpy(tx.iv, writeIV + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
     memcpy(tx.rec_seq, writeSeq, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
