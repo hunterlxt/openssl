@@ -575,6 +575,9 @@ typedef int (*SSL_verify_cb)(int preverify_ok, X509_STORE_CTX *x509_ctx);
 /* Maximum length of the application-controlled segment of a a TLSv1.3 cookie */
 # define SSL_COOKIE_LENGTH                       4096
 
+/* Enable Kernel tls, require kernel tls module to be enabled */
+int SSL_enable_ktls(const SSL *s, int fd);
+
 /*
  * Note: SSL[_CTX]_set_{options,mode} use |= op on the previous value, they
  * cannot be used to clear bits.

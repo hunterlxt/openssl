@@ -72,6 +72,10 @@ extern "C" {
 # define EVP_PKEY_MO_ENCRYPT     0x0004
 # define EVP_PKEY_MO_DECRYPT     0x0008
 
+/* Use for SSL_enable_ktls, not to be exported */
+unsigned char *EVP_get_ktls_key(EVP_CIPHER_CTX *ctx);
+unsigned char *EVP_get_ktls_iv(EVP_CIPHER_CTX *ctx);
+
 # ifndef EVP_MD
 EVP_MD *EVP_MD_meth_new(int md_type, int pkey_type);
 EVP_MD *EVP_MD_meth_dup(const EVP_MD *md);

@@ -4212,3 +4212,23 @@ BLOCK_CIPHER_custom(NID_aes, 192, 16, 12, ocb, OCB,
 BLOCK_CIPHER_custom(NID_aes, 256, 16, 12, ocb, OCB,
                     EVP_CIPH_FLAG_AEAD_CIPHER | CUSTOM_FLAGS)
 #endif                         /* OPENSSL_NO_OCB */
+
+unsigned char *EVP_get_ktls_key(EVP_CIPHER_CTX *ctx)
+{
+    EVP_AES_GCM_CTX *gcm_ctx = (EVP_AES_GCM_CTX*)(ctx->cipher_data);
+    if (gcm_ctx == NULL) {
+        printf("OpenSSL: EVP_AES_GCM_CTX is NULL\n");
+        exit(-1);
+    }
+    return gcm_ctx->gcm.key;
+}
+
+unsigned char *EVP_get_ktls_iv(EVP_CIPHER_CTX *ctx)
+{
+    EVP_AES_GCM_CTX *gcm_ctx = (EVP_AES_GCM_CTX*)(ctx->cipher_data);
+    if (gcm_ctx == NULL) {
+        printf("OpenSSL: EVP_AES_GCM_CTX is NULL\n");
+        exit(-1);
+    }
+    return gcm_ctx->iv;
+}

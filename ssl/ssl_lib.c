@@ -20,10 +20,101 @@
 #include <openssl/engine.h>
 #include <openssl/async.h>
 #include <openssl/ct.h>
+#include <linux/tls.h>
+#include <netinet/tcp.h>
 #include "internal/cryptlib.h"
 #include "internal/refcount.h"
 
 const char SSL_version_str[] = OPENSSL_VERSION_TEXT;
+
+#define TX_MODE 0
+#define RX_MODE 1
+
+unsigned char *SSL_get_ktls_key(const SSL *s, int mode) 
+{
+    unsigned char* ret = NULL;
+    if (mode == TX_MODE) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_write_ctx; 
+        ret = EVP_get_ktls_key(ctx);
+    } 
+    else if (mode == RX_MODE) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_read_ctx; 
+        ret = EVP_get_ktls_key(ctx);
+    }
+    return ret;
+}
+
+unsigned char *SSL_get_ktls_iv(const SSL *s, int mode) 
+{
+    unsigned char* ret = NULL;
+    if (mode == TX_MODE) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_write_ctx; 
+        ret = EVP_get_ktls_iv(ctx);
+    } 
+    else if (mode == RX_MODE) 
+    {
+        EVP_CIPHER_CTX *ctx = s->enc_read_ctx; 
+        ret = EVP_get_ktls_iv(ctx);
+    }
+    return ret;
+}
+
+unsigned char *SSL_get_ktls_sequence(const SSL *s, int mode) 
+{
+    unsigned char* ret = NULL;
+    if (mode == TX_MODE)
+        ret = s->rlayer.write_sequence;
+    else if (mode == RX_MODE)
+        ret = s->rlayer.read_sequence;
+    return ret;
+}
+
+int SSL_enable_ktls(const SSL *ssl, int fd) {
+    struct tls12_crypto_info_aes_gcm_128 tx, rx;
+
+    tx.info.version = TLS_1_2_VERSION;
+    tx.info.cipher_type = TLS_CIPHER_AES_GCM_128;
+    rx.info.version = TLS_1_2_VERSION;
+    rx.info.cipher_type = TLS_CIPHER_AES_GCM_128;
+
+    unsigned char *writeKey = SSL_get_ktls_key(ssl, TX_MODE);
+    unsigned char *readKey = SSL_get_ktls_key(ssl, RX_MODE);
+    unsigned char *writeIV = SSL_get_ktls_iv(ssl, TX_MODE);
+    unsigned char *readIV = SSL_get_ktls_iv(ssl, RX_MODE);
+    unsigned char *writeSeq = SSL_get_ktls_sequence(ssl, TX_MODE);
+    unsigned char *readSeq = SSL_get_ktls_sequence(ssl, RX_MODE);
+
+    memcpy(tx.iv, writeIV + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
+    memcpy(tx.rec_seq, writeSeq, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
+    memcpy(tx.key, writeKey, TLS_CIPHER_AES_GCM_128_KEY_SIZE);
+    memcpy(tx.salt, writeIV, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
+
+    memcpy(rx.iv, readIV + 4, TLS_CIPHER_AES_GCM_128_IV_SIZE);
+    memcpy(rx.rec_seq, readSeq, TLS_CIPHER_AES_GCM_128_REC_SEQ_SIZE);
+    memcpy(rx.key, readKey, TLS_CIPHER_AES_GCM_128_KEY_SIZE);
+    memcpy(rx.salt, readIV, TLS_CIPHER_AES_GCM_128_SALT_SIZE);
+
+    int flag = 0;
+    flag = setsockopt(fd, SOL_TCP, TCP_ULP, "tls", sizeof("tls"));
+    if (flag != 0) {
+        printf("OpenSSL: Enable tls error (%d)\n", flag);
+        return 0;
+    }
+    flag = setsockopt(fd, SOL_TLS, 1, &tx, sizeof(tx));
+    if (flag != 0) {
+        printf("OpenSSL: set tx error (%d)\n", flag);
+        return 0;
+    }
+    flag = setsockopt(fd, SOL_TLS, 2, &rx, sizeof(rx));
+    if (flag != 0) {
+        printf("OpenSSL: set rx error (%d)\n", flag);
+        return 0;
+    }
+    return 1;
+}
 
 static int ssl_undefined_function_1(SSL *ssl, SSL3_RECORD *r, size_t s, int t)
 {
