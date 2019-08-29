@@ -23,6 +23,7 @@
 #include <openssl/evp.h>
 #include <linux/tls.h>
 #include <netinet/tcp.h>
+#include <sys/sendfile.h>
 #include "internal/cryptlib.h"
 #include "internal/refcount.h"
 
@@ -90,7 +91,7 @@ int SSL_enable_ktls(const SSL *ssl, int fd, int mode) {
             return 0;
         }
     }
-    
+
     if (mode == RX_MODE || mode == TX_RX_MODE) {
         readKey = SSL_get_ktls_key(ssl, 1);
         readIV = SSL_get_ktls_iv(ssl, 1);
@@ -2026,6 +2027,12 @@ int ssl_write_internal(SSL *s, const void *buf, size_t num, size_t *written)
     } else {
         return s->method->ssl_write(s, buf, num, written);
     }
+}
+
+int SSL_sendfile(SSL *ssl, int filefd, off_t *offset, size_t count)
+{
+    int fd = SSL_get_fd(ssl);
+    return sendfile(fd, filefd, offset, count);
 }
 
 int SSL_write(SSL *s, const void *buf, int num)
